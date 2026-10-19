@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Walker Payout Portal</title>
+<style>
+:root{--bg:#f4f6f1;--card:#fff;--tx:#1a2420;--mu:#5f6f68;--bd:#dfe5dc;--nav:#12372f;--pri:#0f766e;--ok:#15803d;--bad:#b91c1c;--bar:#d99a06;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1512;--card:#13211d;--tx:#e6efe9;--mu:#93a79d;--bd:#243730;--nav:#08110f;--ok:#4ade80;--bad:#f87171;--bar:#f0b429;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c1512;--card:#13211d;--tx:#e6efe9;--mu:#93a79d;--bd:#243730;--nav:#08110f;--ok:#4ade80;--bad:#f87171;--bar:#f0b429;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--nav);color:#fff;display:flex;align-items:center;gap:12px;padding:12px max(16px,4vw)}
+.logo{width:44px;height:44px;border-radius:12px;background:var(--pri);display:grid;place-items:center;font-size:20px;font-weight:700}
+header b{display:block;font-size:17px}header small{opacity:.75}
+.sp{flex:1}
+button,select,input{font:inherit;color:var(--tx)}
+button{cursor:pointer;border:1px solid var(--bd);background:var(--card);border-radius:10px;padding:8px 14px;font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+button.p{background:var(--pri);border-color:var(--pri);color:#fff}
+button.g{background:transparent;color:#fff;border-color:#ffffff55}
+button.d{color:var(--bad)}
+input,select{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;min-width:0}
+main{max-width:1180px;margin:0 auto;padding:24px max(16px,3vw) 48px}
+h1{font-size:clamp(26px,4vw,36px);margin:0}h2{font-size:18px;margin:28px 0 10px}
+.mu{color:var(--mu)}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.top{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:flex-end}
+.flt{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.flt label{display:grid;gap:2px;font-size:13px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px 18px}
+.card .l{font-size:13px;color:var(--mu);font-weight:600}.card .v{font-size:30px;font-weight:800;margin:2px 0}.card .s{font-size:13px;color:var(--mu)}
+.tw{overflow-x:auto;background:var(--card);border:1px solid var(--bd);border-radius:14px}
+.th{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{text-align:left;padding:9px 16px;border-top:1px solid var(--bd);white-space:nowrap}
+th{font-size:12.5px;color:var(--mu)}td.n,th.n{text-align:right}
+.chart{display:flex;align-items:flex-end;gap:6px;height:170px;padding:14px;overflow-x:auto}
+.bar{flex:1;min-width:30px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:11px;color:var(--mu)}
+.bar i{display:block;width:100%;background:var(--bar);border-radius:6px 6px 0 0;min-height:2px}
+.tag{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700;background:var(--bg);border:1px solid var(--bd)}
+.login{max-width:400px;margin:8vh auto;display:grid;gap:12px}
+.tabs{display:flex;gap:8px}.tabs button{flex:1}.tabs .on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.big{font-size:40px;font-weight:800}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.two .card{display:grid;gap:8px;align-content:start}
+.modal{position:fixed;inset:0;background:#0009;display:grid;place-items:center;padding:16px;z-index:9}
+.modal .card{width:min(640px,100%)}textarea{width:100%;height:240px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px;font:12px monospace}
+.msg{font-size:13px;color:var(--bad);min-height:18px}
+</style></head><body>
+<div id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const K='wpp_v2',$=s=>document.querySelector(s),fmt=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const iso=d=>{const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+const today=()=>iso(new Date()),tm=t=>t?new Date(t).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'–';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function seed(){let r=7;const rnd=()=>(r=(r*9301+49297)%233280)/233280;
+const w=[['Bagata Ram','FE1001','Jodhpur Junction'],['Daula Ram','FE1002','Jodhpur Junction'],['Shyam Lal','FE1003','Jodhpur Junction']].map(([name,fe,station])=>({name,fe,station,pin:'1234'}));
+const rec=[];for(let i=30;i>=1;i--){const d=new Date();d.setDate(d.getDate()-i);w.forEach(x=>{const p=rnd(),st=p<.06?'A':p<.12?'L':'P';
+if(st!=='P'){rec.push({date:iso(d),fe:x.fe,st,orders:0,cancelled:0});return}
+const i0=new Date(d);i0.setHours(8+Math.floor(rnd()*2),Math.floor(rnd()*60));
+rec.push({date:iso(d),fe:x.fe,st:'P',orders:8+Math.floor(rnd()*28),cancelled:rnd()<.05?1:0,in:+i0,out:+i0+(7+rnd()*4)*36e5})})}
+return{rate:20,slabs:'30:300,20:150,12:60',walkers:w,rec}}
+let S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}if(!S)S=seed();
+let user=null;try{user=JSON.parse(localStorage.getItem('wpp_u2'))}catch(e){}
+const F={from:'',to:'',q:''};
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+function setUser(u){user=u;try{localStorage.setItem('wpp_u2',JSON.stringify(u))}catch(e){}render()}
+const slabs=()=>S.slabs.split(',').map(x=>x.split(':').map(Number)).filter(x=>x.length==2&&!isNaN(x[0])&&!isNaN(x[1])).sort((a,b)=>b[0]-a[0]);
+function calc(r){const b=r.orders*S.rate,s=slabs().find(x=>r.orders>=x[0]),inc=s?s[1]:0;return{b,inc,t:b+inc,h:r.in&&r.out?(r.out-r.in)/36e5:0}}
+const wname=fe=>(S.walkers.find(w=>w.fe==fe)||{name:fe}).name;
+function rec(fe){let r=S.rec.find(x=>x.fe==fe&&x.date==today());if(!r){r={date:today(),fe,st:'P',orders:0,cancelled:0};S.rec.push(r)}return r}
+function doLogin(role){const id=$('#id').value.trim(),pin=$('#pin').value;
+if(role=='admin'){if(id.toLowerCase()=='admin'&&pin=='admin123')return setUser({role,id:'admin'})}
+else{const w=S.walkers.find(x=>x.fe.toLowerCase()==id.toLowerCase()&&x.pin==pin);if(w)return setUser({role,id:w.fe})}
+$('#err').textContent='Wrong ID or PIN. Check the demo details below.'}
+function logout(){setUser(null)}
+function checkIn(){const r=rec(user.id);if(!r.in){r.in=Date.now();r.st='P';save()}render()}
+function checkOut(){const r=rec(user.id);if(r.in&&!r.out){r.out=Date.now();save()}render()}
+function bump(k,n){const r=rec(user.id);if(!r.in||r.out){alert('Check in first. Orders can be added only while you are logged in.');return}r[k]=Math.max(0,r[k]+n);save();render()}
+function inRange(r){return(!F.from||r.date>=F.from)&&(!F.to||r.date<=F.to)}
+function agg(rs){return rs.reduce((a,r)=>{const c=calc(r);a.o+=r.orders;a.c+=r.cancelled;a.b+=c.b;a.i+=c.inc;a.t+=c.t;a.h+=c.h;a[r.st]=(a[r.st]||0)+1;return a},{o:0,c:0,b:0,i:0,t:0,h:0})}
+const card=(l,v,s,cls='')=>`<div class="card"><div class="l">${l}</div><div class="v ${cls}">${v}</div><div class="s">${s}</div></div>`;
+function loginView(){const role=window._role||'admin';
+return`<div class="login"><div class="row"><div class="logo" style="color:#fff">₹</div><div><b style="font-size:20px">Walker Payout Portal</b><div class="mu">Food on Train · Jodhpur Junction</div></div></div>
+<div class="tabs"><button class="${role=='admin'?'on':''}" onclick="window._role='admin';render()">Admin</button><button class="${role=='walker'?'on':''}" onclick="window._role='walker';render()">Walker</button></div>
+<input id="id" placeholder="${role=='admin'?'Admin ID':'FE ID (e.g. FE1001)'}" autocomplete="username"><input id="pin" type="password" placeholder="PIN" autocomplete="current-password" onkeydown="if(event.key=='Enter')doLogin('${role}')">
+<div class="msg" id="err"></div><button class="p" onclick="doLogin('${role}')">Sign in</button>
+<p class="mu" style="font-size:13px">Demo: admin / admin123 · walkers FE1001 (Bagata Ram), FE1002 (Daula Ram), FE1003 (Shyam Lal) / PIN 1234</p></div>`}
+function walkerView(){const w=S.walkers.find(x=>x.fe==user.id);if(!w)return'<main>Walker not found.</main>';
+const t=S.rec.find(x=>x.fe==w.fe&&x.date==today()),r=t||{orders:0,cancelled:0},c=calc(r),mine=S.rec.filter(x=>x.fe==w.fe),A=agg(mine);
+const nx=slabs().slice().reverse().find(s=>r.orders<s[0]);const live=t&&t.in&&!t.out;
+return`<main><div class="top"><div><h1>Hi, ${esc(w.name)} 👋</h1><div class="mu">${esc(w.fe)} · ${esc(w.station)} · ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div></div></div>
+<div class="two" style="margin-top:16px"><div class="card"><div class="l mu">Today's attendance</div>
+<div class="big">${live?'<span class="ok">Logged in</span>':t&&t.out?'Logged out':'Not started'}</div>
+<div class="mu">In: ${tm(t&&t.in)} · Out: ${tm(t&&t.out)}${c.h?` · ${c.h.toFixed(1)} h`:''}</div>
+<div class="row"><button class="p" onclick="checkIn()" ${t&&t.in?'disabled':''}>Log in</button><button onclick="checkOut()" ${live?'':'disabled'}>Log out</button></div></div>
+<div class="card"><div class="l mu">Today's orders</div><div class="big">${r.orders} <span class="mu" style="font-size:15px">delivered · ${r.cancelled} cancelled</span></div>
+<div class="row"><button class="p" onclick="bump('orders',1)">+ Delivered</button><button onclick="bump('orders',-1)">− Undo</button><button class="d" onclick="bump('cancelled',1)">+ Cancelled</button></div>
+<div class="mu">${nx?`${nx[0]-r.orders} more orders to unlock the ${fmt(nx[1])} incentive.`:'Top incentive slab reached.'}</div></div>
+<div class="card"><div class="l mu">Today's earnings</div><div class="big ok">${fmt(c.t)}</div><div class="mu">Basic ${fmt(c.b)} (₹${S.rate}/order) + incentive ${fmt(c.inc)}</div></div></div>
+<h2>My totals</h2><div class="grid">${card('Total earnings',fmt(A.t),'All recorded days','ok')}${card('Orders',A.o.toLocaleString('en-IN'),A.c+' cancelled')}${card('Incentives',fmt(A.i),'Eligible rewards')}${card('Days present',A.P||0,(A.A||0)+' absent · '+(A.L||0)+' leave')}</div>
+<h2>My history</h2>${table(mine,false)}</main>`}
+function table(rs,showW=true){const rows=rs.slice().sort((a,b)=>b.date.localeCompare(a.date)||a.fe.localeCompare(b.fe)).slice(0,60);
+return`<div class="tw"><table><tr><th>Date</th>${showW?'<th>Walker</th>':''}<th>Status</th><th>Log in</th><th>Log out</th><th class="n">Hours</th><th class="n">Orders</th><th class="n">Cancelled</th><th class="n">Basic</th><th class="n">Incentive</th><th class="n">Total</th></tr>
+${rows.map(r=>{const c=calc(r);return`<tr><td>${r.date}</td>${showW?`<td>${esc(wname(r.fe))}</td>`:''}<td><span class="tag">${{P:'Present',A:'Absent',L:'Leave'}[r.st]}</span></td><td>${tm(r.in)}</td><td>${tm(r.out)}</td><td class="n">${c.h.toFixed(1)}</td><td class="n">${r.orders}</td><td class="n">${r.cancelled}</td><td class="n">${fmt(c.b)}</td><td class="n">${fmt(c.inc)}</td><td class="n"><b>${fmt(c.t)}</b></td></tr>`}).join('')||'<tr><td colspan="11" class="mu">No records yet.</td></tr>'}</table></div>`}
+function adminView(){const rs=S.rec.filter(inRange),A=agg(rs);
+const per=S.walkers.map(w=>({w,a:agg(rs.filter(r=>r.fe==w.fe))})).filter(x=>!F.q||(x.w.name+x.w.fe+x.w.station).toLowerCase().includes(F.q.toLowerCase())).sort((a,b)=>b.a.t-a.a.t);
+const days={};rs.forEach(r=>days[r.date]=(days[r.date]||0)+calc(r).t);const ds=Object.keys(days).sort().slice(-14),mx=Math.max(1,...ds.map(d=>days[d]));
+const live=S.rec.filter(r=>r.date==today()&&r.in&&!r.out).length;
+return`<main><div class="top"><div><h1>Admin dashboard 👋</h1><div class="mu">All walker payout and attendance overview · ${live} walker${live==1?'':'s'} logged in now</div></div>
+<div class="flt"><label>From date<input type="date" id="f1" value="${F.from}"></label><label>To date<input type="date" id="f2" value="${F.to}"></label><button onclick="F.from=$('#f1').value;F.to=$('#f2').value;render()">Apply filter</button><button onclick="F.from=F.to='';render()">Reset</button></div></div>
+<div class="grid">${card('Total earnings',fmt(A.t),F.from||F.to?'Selected date range':'All dates','ok')}${card('Basic earning',fmt(A.b),'Order-based payout')}${card('Incentives',fmt(A.i),'Eligible rewards')}${card('Total orders',A.o.toLocaleString('en-IN'),A.c+' cancelled')}
+${card('Present days',A.P||0,'Attendance records')}${card('Absent days',A.A||0,'Attendance records')}${card('Leave days',A.L||0,'Attendance records')}${card('Login hours',A.h.toFixed(1),'Total recorded hours')}</div>
+<h2>Walker overview</h2><div class="tw"><div class="th"><span class="mu">Ranked by earnings</span><input placeholder="Search walker, FE ID, station" value="${esc(F.q)}" oninput="F.q=this.value;render(1)" id="q"></div>
+<table><tr><th>#</th><th>Walker</th><th>FE ID</th><th>Station</th><th class="n">Orders</th><th class="n">Cancelled</th><th class="n">Basic</th><th class="n">Incentive</th><th class="n">Total earning</th><th class="n">Present</th><th></th></tr>
+${per.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.w.name)}</td><td>${esc(x.w.fe)}</td><td>${esc(x.w.station)}</td><td class="n">${x.a.o}</td><td class="n">${x.a.c}</td><td class="n">${fmt(x.a.b)}</td><td class="n">${fmt(x.a.i)}</td><td class="n"><b>${fmt(x.a.t)}</b></td><td class="n">${x.a.P||0}</td><td><button class="d" onclick="delW('${x.w.fe}')">Remove</button></td></tr>`).join('')||'<tr><td colspan="11" class="mu">No walkers match.</td></tr>'}</table></div>
+<h2>Daily earnings</h2><div class="card chart">${ds.map(d=>`<div class="bar" title="${d}: ${fmt(days[d])}">${fmt(days[d]/1000).replace('₹','')}k<i style="height:${days[d]/mx*100*.8}%"></i>${d.slice(8)}/${d.slice(5,7)}</div>`).join('')||'<span class="mu">No data in this range.</span>'}</div>
+<h2>Orders &amp; payout details</h2><div class="th" style="padding:0 0 8px"><span class="mu">${rs.length} records · showing latest 60</span><button class="p" onclick="exportXlsx()">Export Excel</button></div>${table(rs)}
+<h2>Manage</h2><div class="two">
+<div class="card"><b>Add walker</b><input id="nn" placeholder="Name"><input id="nf" placeholder="FE ID"><input id="ns" placeholder="Station" value="Jodhpur Junction"><input id="np" placeholder="PIN" value="1234"><div class="msg" id="e1"></div><button class="p" onclick="addW()">Add walker</button></div>
+<div class="card"><b>Mark attendance</b><select id="mw">${S.walkers.map(w=>`<option value="${w.fe}">${esc(w.name)}</option>`).join('')}</select><input type="date" id="md" value="${today()}"><select id="ms"><option value="P">Present</option><option value="A">Absent</option><option value="L">Leave</option></select><button class="p" onclick="mark()">Save attendance</button></div>
+<div class="card"><b>Pay rules</b><label class="mu">Basic pay per delivered order (₹)<input type="number" id="rt" value="${S.rate}" style="width:100%"></label><label class="mu">Daily incentive slabs (orders:₹, highest first)<input id="sl" value="${esc(S.slabs)}" style="width:100%"></label><button class="p" onclick="rules()">Save rules</button><button class="d" onclick="if(confirm('Reset everything to demo data?')){S=seed();save();render()}">Reset demo data</button></div></div></main>`}
+function addW(){const n=$('#nn').value.trim(),f=$('#nf').value.trim().toUpperCase(),s=$('#ns').value.trim(),p=$('#np').value.trim();
+if(!n||!f||!p)return $('#e1').textContent='Name, FE ID and PIN are required.';
+if(S.walkers.some(w=>w.fe==f))return $('#e1').textContent='That FE ID already exists.';
+S.walkers.push({name:n,fe:f,station:s,pin:p});save();render()}
+function delW(fe){if(confirm('Remove '+wname(fe)+' and all their records?')){S.walkers=S.walkers.filter(w=>w.fe!=fe);S.rec=S.rec.filter(r=>r.fe!=fe);save();render()}}
+function mark(){const fe=$('#mw').value,d=$('#md').value,st=$('#ms').value;if(!fe||!d)return;
+let r=S.rec.find(x=>x.fe==fe&&x.date==d);if(!r){r={date:d,fe,orders:0,cancelled:0};S.rec.push(r)}r.st=st;
+if(st!='P'){r.orders=0;r.cancelled=0;delete r.in;delete r.out}save();render()}
+function rules(){const r=+$('#rt').value;if(!(r>=0))return;S.rate=r;S.slabs=$('#sl').value.trim();save();render()}
+function csv(){const h='Date,Walker,FE ID,Status,Login,Logout,Hours,Orders,Cancelled,Basic,Incentive,Total';
+const L=S.rec.filter(inRange).sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{const c=calc(r);return[r.date,'"'+wname(r.fe)+'"',r.fe,r.st,tm(r.in),tm(r.out),c.h.toFixed(2),r.orders,r.cancelled,c.b,c.inc,c.t].join(',')});
+const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="card"><b>Export CSV</b><p class="mu">Copy this and paste it into Excel, Google Sheets or a .csv file.</p><textarea readonly></textarea><div class="row"><button class="p" id="cp">Copy</button><button id="cl">Close</button></div></div>';
+document.body.appendChild(m);const t=m.querySelector('textarea');t.value=[h,...L].join('\n');t.select();
+m.querySelector('#cl').onclick=()=>m.remove();m.querySelector('#cp').onclick=()=>{t.select();try{document.execCommand('copy');m.querySelector('#cp').textContent='Copied'}catch(e){}}}
+async function exportXlsx(){
+if(!window.XLSX)return alert('The Excel library did not load. Check your internet connection and reload the page.');
+const rs=S.rec.filter(inRange).sort((a,b)=>a.date.localeCompare(b.date)||a.fe.localeCompare(b.fe));
+const rows=[['Date','Walker','FE ID','Status','Login time','Logout time','Hours','Orders','Cancelled','Basic (₹)','Incentive (₹)','Total (₹)']];
+rs.forEach(r=>{const c=calc(r);rows.push([r.date,wname(r.fe),r.fe,{P:'Present',A:'Absent',L:'Leave'}[r.st],tm(r.in),tm(r.out),+c.h.toFixed(2),r.orders,r.cancelled,c.b,c.inc,c.t])});
+const sum=[['Walker','FE ID','Present days','Orders','Cancelled','Basic (₹)','Incentive (₹)','Total (₹)','Login hours']];
+S.walkers.forEach(w=>{const a=agg(rs.filter(r=>r.fe==w.fe));sum.push([w.name,w.fe,a.P||0,a.o,a.c,a.b,a.i,a.t,+a.h.toFixed(2)])});
+const A=agg(rs);sum.push(['All walkers','',A.P||0,A.o,A.c,A.b,A.i,A.t,+A.h.toFixed(2)]);
+const wb=XLSX.utils.book_new(),s1=XLSX.utils.aoa_to_sheet(rows),s2=XLSX.utils.aoa_to_sheet(sum);
+s1['!cols']=[12,18,9,10,12,12,8,8,10,11,13,11].map(w=>({wch:w}));s2['!cols']=[18,9,13,9,10,11,13,11,12].map(w=>({wch:w}));
+XLSX.utils.book_append_sheet(wb,s1,'Daily records');XLSX.utils.book_append_sheet(wb,s2,'Summary');
+const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'}),name='walker-payout-'+today()+'.xlsx';
+let d=null;try{d=window.claude?await window.claude.use('downloads'):null}catch(e){}
+if(!d){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf]));a.download=name;a.click();return}
+try{await d.save({filename:name,data:buf})}catch(e){if(!e||e.code!='declined')alert('Could not save the Excel file. Please try again.')}}
+function render(keep){const f=keep&&document.activeElement&&document.activeElement.id=='q';
+$('#app').innerHTML=(user?`<header><div class="logo">₹</div><div><b>Walker Payout Portal</b><small>Food on Train · Jodhpur Junction</small></div><span class="sp"></span><button class="g" onclick="logout()">Sign out</button></header>`:'')+(!user?loginView():user.role=='admin'?adminView():walkerView());
+if(f){const q=$('#q');q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+render();
+</script></body></html>
